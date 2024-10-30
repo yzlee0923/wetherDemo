@@ -1,10 +1,29 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useRouter} from "next/router";
 import {InfoList, Search} from "@/pages/_components";
 
 export default function Page() {
+    //天气数据
     const [data, setData] = useState(null)
     const router = useRouter()
+
+    //输入框ref
+    const inputRef = useRef(null)
+    //输入框事件
+    function handerClick() {
+        const inputValue = inputRef.current.value.trim();
+        if(inputValue)
+        {
+            const url = `/${encodeURIComponent(inputRef.current.value)}`
+            router.push(url, url, { shallow: true })
+            inputRef.current.value = ''
+        }
+        else
+        {
+            inputRef.current.focus()
+        }
+
+    }
     useEffect(() => {
         const {city} = router.query
         if(city)
@@ -16,7 +35,7 @@ export default function Page() {
                 }
                 const result = await response.json()
                 console.log(JSON.stringify(result.infos))
-                if(result.infos)
+                if(result.infos && result.infos.length > 0)
                 {
                     setData({infos:result.infos})
                 }
@@ -25,7 +44,6 @@ export default function Page() {
                     setData({msg: "没有城市信息，请输入正确的城市英文名"})
                 }
             }
-
             fetchData().catch((e) => {
                 // handle the error as needed
                 console.error('An error occurred while fetching the data: ', e)
@@ -39,6 +57,7 @@ export default function Page() {
 
     }, [router.query.city])
 
+
     let resComponent = '';
     if(router.query.city)
     {
@@ -48,9 +67,10 @@ export default function Page() {
         }
         else if(data.infos)
         {
+            console.log(data.infos)
             resComponent = (
                 <div>
-                    <div>{router.query.city} 的天气</div>
+                    <div className="font-bold m-2">{router.query.city} 的天气</div>
                     <InfoList {...data}></InfoList>
                 </div>
             )
@@ -61,9 +81,15 @@ export default function Page() {
         }
     }
     return (
-        <div>
-            <div>天气预报</div>
-            <Search></Search>
-            {resComponent}
+        <div className="flex justify-center mt-20 h-screen text-lg">
+            <div className="w-96">
+                <div className="text-4xl m-4 font-bold text-center w-full">天气预报</div>
+                <div className="m-4">
+                    <Search keyName="q" placeholder="输入城市" searchEvent={handerClick} ref={inputRef}></Search>
+                </div>
+                <div className="m-4">
+                    {resComponent}
+                </div>
+            </div>
         </div>)
 }
